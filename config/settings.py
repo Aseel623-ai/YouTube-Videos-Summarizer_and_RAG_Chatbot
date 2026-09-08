@@ -82,6 +82,20 @@ CHUNK_OVERLAP: int = 150
 # ── Retriever ────────────────────────────────────────────────────────────────
 RETRIEVER_TOP_K: int = 5
 
+def get_max_transcript_chars() -> int:
+    """Return max transcript length based on user Token Mode setting in sidebar."""
+    try:
+        mode = st.session_state.get("token_mode_radio", "balanced")
+        if mode == "saver":
+            return 15_000   # ~3.5k tokens
+        elif mode == "detailed":
+            return 45_000   # ~11k tokens
+    except Exception:
+        pass
+    return 25_000           # ~6k tokens (default balanced)
+
+
 # ── Transcript ───────────────────────────────────────────────────────────────
-MAX_TRANSCRIPT_CHARS: int = 60_000   # ~15k tokens; truncated before sending to LLM
+MAX_TRANSCRIPT_CHARS: int = 25_000   # ~6k tokens; optimized default
+
 

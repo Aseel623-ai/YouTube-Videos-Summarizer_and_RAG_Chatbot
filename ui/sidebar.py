@@ -41,6 +41,24 @@ def render_sidebar():
 
         st.divider()
 
+        # Token Saver Control
+        st.markdown("### ⚡ Token Consumption / استهلاك التوكينز")
+        st.radio(
+            "Select Processing Mode:",
+            options=["saver", "balanced", "detailed"],
+            index=1,
+            format_func=lambda x: {
+                "saver": "⚡ Token Saver (~3.5k tokens)",
+                "balanced": "⚖️ Balanced (~6k tokens - Recommended)",
+                "detailed": "📜 Detailed (~11k tokens)"
+            }[x],
+            key="token_mode_radio",
+            help="Controls max transcript context length per LLM request to save API quota."
+        )
+
+        st.divider()
+
+
         # How to get API Key expander
         with st.expander("❓ How to get a FREE Gemini API Key? / كيف تحصل على مفتاح API مجاني؟", expanded=False):
             st.markdown("""

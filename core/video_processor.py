@@ -39,9 +39,92 @@ def extract_video_id(url: str) -> str | None:
 _LANG_CODE_MAP = {"english": ["en", "en-US", "en-GB"], "arabic": ["ar"]}
 _CODE_TO_LANG  = {"en": "english", "en-US": "english", "en-GB": "english", "ar": "arabic"}
 
+
+def _clean_vtt_subtitles(vtt_text: str) -> str:
+    """Helper to clean WebVTT subtitle text into a continuous transcript string."""
+    lines = vtt_text.splitlines()
+    clean_lines = []
+    seen = set()
+
+    for line in lines:
+        line = line.strip()
+        # Skip VTT metadata, cue numbers, timestamps, and empty lines
+        if not line or line.startswith("WEBVTT") or line.startswith("Kind:") or line.startswith("Language:"):
+            continue
+        if "-->" in line:
+            continue
+        if line.isdigit():
+            continue
+
+        # Strip HTML-like subtitle tags e.g. <c.colorFFF>word</c>
+        clean = re.sub(r"<[^>]+>", "", line).strip()
+        if clean and clean not in seen:
+            clean_lines.append(clean)
+            seen.add(clean)
+
+    return " ".join(clean_lines)
+
+
+def _get_transcript_via_ytdlp(video_id: str, preferred_lang: str = "english") -> tuple[str | None, str | None]:
+    """
+    Fallback method using yt-dlp to download subtitles if youtube_transcript_api is blocked.
+    """
+    import requests
+    lang_code = "ar" if preferred_lang.lower() == "arabic" else "en"
+    url = f"https://www.youtube.com/watch?v={video_id}"
+
+    ydl_opts = {
+        "quiet": True,
+        "no_warnings": True,
+        "skip_download": True,
+        "writesubtitles": True,
+        "writeautomaticsub": True,
+    }
+
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=False)
+
+        subtitles = info.get("subtitles", {}) or {}
+        auto_caps = info.get("automatic_captions", {}) or {}
+        all_subs = {**subtitles, **auto_caps}
+
+        # Try target lang, then en/ar fallbacks, then any available track
+        selected_track = None
+        for code in [lang_code, "en", "ar"] + list(all_subs.keys()):
+            if code in all_subs and all_subs[code]:
+                selected_track = all_subs[code]
+                break
+
+        if not selected_track:
+            return None, None
+
+        # Prefer vtt or json3 formats
+        sub_url = None
+        for fmt in selected_track:
+            if fmt.get("ext") in ["vtt", "json3", "srv1"]:
+                sub_url = fmt.get("url")
+                break
+
+        if not sub_url and selected_track:
+            sub_url = selected_track[0].get("url")
+
+        if sub_url:
+            resp = requests.get(sub_url, timeout=10)
+            if resp.status_code == 200:
+                clean_text = _clean_vtt_subtitles(resp.text)
+                if clean_text:
+                    return clean_text, preferred_lang
+    except Exception:
+        pass
+
+    return None, None
+
+
 def get_transcript(video_id: str, preferred_lang: str = "english") -> tuple[str | None, str | None]:
     """
     Fetch the transcript for a given video.
+    First tries youtube_transcript_api, then falls back to yt-dlp if IP-blocked.
 
     Args:
         video_id       : 11-character YouTube video ID
@@ -49,7 +132,6 @@ def get_transcript(video_id: str, preferred_lang: str = "english") -> tuple[str 
 
     Returns:
         (transcript_text, detected_language) — both None on failure.
-        Falls back to the other language if preferred is unavailable.
     """
     api       = YouTubeTranscriptApi()
     formatter = TextFormatter()
@@ -58,6 +140,7 @@ def get_transcript(video_id: str, preferred_lang: str = "english") -> tuple[str 
     primary_codes  = _LANG_CODE_MAP.get(lang_pref, ["en"])
     fallback_codes = _LANG_CODE_MAP.get("arabic" if lang_pref == "english" else "english", ["ar"])
 
+    # 1. Try YouTubeTranscriptApi
     for codes in [primary_codes, fallback_codes]:
         try:
             transcript = api.fetch(video_id, languages=codes)
@@ -67,9 +150,16 @@ def get_transcript(video_id: str, preferred_lang: str = "english") -> tuple[str 
         except (NoTranscriptFound, VideoUnavailable):
             continue
         except Exception:
-            continue
+            # IP block, HTTP 429, bot detection -> break to fallback
+            break
+
+    # 2. Fallback to yt-dlp subtitle extractor
+    text, detected = _get_transcript_via_ytdlp(video_id, preferred_lang=preferred_lang)
+    if text:
+        return text, detected
 
     return None, None
+
 
 
 # ── Metadata ──────────────────────────────────────────────────────────────────

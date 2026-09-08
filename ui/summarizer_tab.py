@@ -37,6 +37,14 @@ def render_summarizer_tab():
         key="summarizer_mode_radio"
     )
 
+    with st.expander("🛠️ Advanced: Paste Manual Transcript (Optional / خيار إدخال النص يدوياً)"):
+        manual_transcript_input = st.text_area(
+            "Paste Transcript Text",
+            placeholder="If YouTube restricts auto-captions for this video, copy and paste the transcript text here...",
+            height=120,
+            key="summarizer_manual_transcript"
+        )
+
     if st.button("🚀 Generate Summary", type="primary", use_container_width=True):
         if not has_valid_api_key():
             st.error("🔑 **Gemini API Key missing!** Please enter your API key in the sidebar configuration on the left.")
@@ -46,9 +54,14 @@ def render_summarizer_tab():
             st.warning("Please enter a YouTube video URL first.")
             return
 
-
         with st.spinner("Processing video and running AI workflow..."):
-            result = run_summarize_pipeline(url=url_input, language=language, mode=mode)
+            result = run_summarize_pipeline(
+                url=url_input,
+                language=language,
+                mode=mode,
+                manual_transcript=manual_transcript_input.strip()
+            )
+
 
         if result.get("error"):
             st.error(f"❌ Error: {result['error']}")

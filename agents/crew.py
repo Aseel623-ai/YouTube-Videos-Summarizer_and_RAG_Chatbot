@@ -20,18 +20,9 @@ def run_summarizer_crew(
 ) -> str:
     """
     Run CrewAI crew to analyze transcript and produce a structured summary.
+    Optimized single-pass agent execution to minimize token consumption.
     """
-    analyst = create_transcript_analyst()
     summarizer = create_summarizer_agent()
-
-    task_analysis = Task(
-        description=(
-            f"Analyze the transcript for video '{metadata.get('title', 'Video')}'. "
-            f"Identify main themes, key terminology, and structure.\n\nTranscript snippet:\n{transcript[:3000]}"
-        ),
-        expected_output="A list of core topics, main themes, and key terms found in the transcript.",
-        agent=analyst,
-    )
 
     prompt_template = get_summarizer_prompt(language, mode)
     formatted_prompt = prompt_template.format(
@@ -41,20 +32,21 @@ def run_summarizer_crew(
     )
 
     task_summary = Task(
-        description=f"Produce the final summary using this template instruction:\n\n{formatted_prompt}",
+        description=f"Analyze transcript and produce final summary using instructions:\n\n{formatted_prompt}",
         expected_output=f"A complete, beautifully formatted summary in {language}.",
         agent=summarizer,
     )
 
     crew = Crew(
-        agents=[analyst, summarizer],
-        tasks=[task_analysis, task_summary],
+        agents=[summarizer],
+        tasks=[task_summary],
         process=Process.sequential,
         verbose=False
     )
 
     result = crew.kickoff()
     return str(result)
+
 
 
 def run_qa_crew(

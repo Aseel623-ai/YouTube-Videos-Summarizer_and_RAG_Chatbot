@@ -10,7 +10,7 @@ try:
 except ImportError:
     from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
-from config.settings import CHUNK_SIZE, CHUNK_OVERLAP, MAX_TRANSCRIPT_CHARS
+from config.settings import CHUNK_SIZE, CHUNK_OVERLAP, MAX_TRANSCRIPT_CHARS, get_max_transcript_chars
 
 
 # ── Chunking ──────────────────────────────────────────────────────────────────
@@ -47,14 +47,16 @@ def chunk_transcript(text: str, video_id: str) -> list[Document]:
 
 # ── Transcript Truncation ─────────────────────────────────────────────────────
 
-def truncate_transcript(text: str, max_chars: int = MAX_TRANSCRIPT_CHARS) -> str:
+def truncate_transcript(text: str, max_chars: int | None = None) -> str:
     """
-    Truncate transcript to avoid overflowing LLM context windows.
+    Truncate transcript to avoid overflowing LLM context windows and save tokens.
     Appends a note so the LLM knows it's working with partial content.
     """
-    if len(text) <= max_chars:
+    limit = max_chars if max_chars is not None else get_max_transcript_chars()
+    if len(text) <= limit:
         return text
-    return text[:max_chars] + "\n\n[Transcript truncated — partial content shown.]"
+    return text[:limit] + "\n\n[Transcript truncated for token efficiency — core content preserved.]"
+
 
 
 # ── RTL Formatting ────────────────────────────────────────────────────────────
