@@ -4,10 +4,23 @@ ui/summarizer_tab.py
 Streamlit UI layout & rendering logic for Tab 1 (Summarizer).
 """
 
-import streamlit as st
-from config.settings import has_valid_api_key
+try:
+    from config.settings import has_valid_api_key
+except Exception:
+    def has_valid_api_key():
+        import os
+        try:
+            if "custom_gemini_api_key" in st.session_state and st.session_state["custom_gemini_api_key"]:
+                return True
+            if hasattr(st, "secrets") and ("GEMINI_API_KEY" in st.secrets or "GOOGLE_API_KEY" in st.secrets):
+                return True
+        except Exception:
+            pass
+        return bool(os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY"))
+
 from core.text_utils import format_rtl
 from workflows.summarize_workflow import run_summarize_pipeline
+
 
 
 def render_summarizer_tab():

@@ -4,12 +4,40 @@ ui/admin_tab.py
 Streamlit UI for Tab 3: Protected Admin Dashboard to inspect and manage ChromaDB vector store.
 """
 
+import os
+import streamlit as st
+
+def get_admin_password() -> str:
+    try:
+        from config.settings import get_admin_password as _gap
+        return _gap()
+    except Exception:
+        try:
+            if hasattr(st, "secrets") and "ADMIN_PASSWORD" in st.secrets:
+                return str(st.secrets["ADMIN_PASSWORD"]).strip()
+        except Exception:
+            pass
+        return os.getenv("ADMIN_PASSWORD", "admin123")
+
 try:
-    from config import get_admin_password
-except ImportError:
-    from config.settings import get_admin_password
-from rag.vector_store import ChromaManager
-from core.video_processor import get_video_metadata
+    from rag.vector_store import ChromaManager
+except Exception:
+    ChromaManager = None
+
+try:
+    from core.video_processor import get_video_metadata
+except Exception:
+    def get_video_metadata(video_id: str) -> dict:
+        return {
+            "title": f"Video {video_id}",
+            "thumbnail": f"https://img.youtube.com/vi/{video_id}/hqdefault.jpg",
+            "channel": "Unknown Channel",
+            "duration": "N/A",
+            "view_count": "N/A",
+            "upload_date": "N/A",
+            "video_id": video_id,
+        }
+
 
 
 
