@@ -4,11 +4,21 @@ app.py
 Main Streamlit Entrypoint for YouTube Video Summarizer & RAG Chatbot.
 """
 
+import sys
+import os
+from pathlib import Path
+
+# Ensure project root directory is always at the head of sys.path for Streamlit Cloud
+ROOT_DIR = Path(__file__).resolve().parent
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
+
 import streamlit as st
 from ui.sidebar import render_sidebar
 from ui.summarizer_tab import render_summarizer_tab
 from ui.chatbot_tab import render_chatbot_tab
 from ui.admin_tab import render_admin_tab
+
 
 st.set_page_config(
     page_title="YouTube AI Suite — Summarizer & RAG Chatbot",

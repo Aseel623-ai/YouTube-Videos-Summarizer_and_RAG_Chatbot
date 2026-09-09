@@ -4,10 +4,13 @@ ui/admin_tab.py
 Streamlit UI for Tab 3: Protected Admin Dashboard to inspect and manage ChromaDB vector store.
 """
 
-import streamlit as st
-from config.settings import get_admin_password
+try:
+    from config import get_admin_password
+except ImportError:
+    from config.settings import get_admin_password
 from rag.vector_store import ChromaManager
 from core.video_processor import get_video_metadata
+
 
 
 def render_admin_tab():
