@@ -18,3 +18,5 @@ python-dotenv>=1.0.0
 tiktoken>=0.7.0
 pysqlite3-binary>=0.5.2
 tenacity>=8.2.0
+torch
+torchvision
