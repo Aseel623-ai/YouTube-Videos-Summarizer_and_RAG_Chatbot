@@ -63,6 +63,17 @@ def has_valid_api_key() -> bool:
     return bool(get_gemini_api_key())
 
 
+def get_admin_password() -> str:
+    """Retrieve admin password from Streamlit secrets, env vars, or fallback default."""
+    try:
+        if "ADMIN_PASSWORD" in st.secrets:
+            return str(st.secrets["ADMIN_PASSWORD"]).strip()
+    except Exception:
+        pass
+    return os.getenv("ADMIN_PASSWORD", "admin123")
+
+
+
 # ── LLM (Google Gemini) ─────────────────────────────────────────────────────
 LLM_MODEL: str = "gemini/gemini-3.6-flash"          # CrewAI / LiteLLM format
 LANGCHAIN_LLM_MODEL: str = "gemini-3.6-flash"        # LangChain format

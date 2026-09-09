@@ -8,6 +8,7 @@ import streamlit as st
 from ui.sidebar import render_sidebar
 from ui.summarizer_tab import render_summarizer_tab
 from ui.chatbot_tab import render_chatbot_tab
+from ui.admin_tab import render_admin_tab
 
 st.set_page_config(
     page_title="YouTube AI Suite — Summarizer & RAG Chatbot",
@@ -45,10 +46,14 @@ st.markdown("""
 st.markdown('<div class="main-header">🎬 YouTube AI Suite</div>', unsafe_allow_html=True)
 st.caption("Multilingual Summarization & RAG Chatbot powered by CrewAI, LangChain, LangGraph, ChromaDB, and Gemini.")
 
-tab1, tab2 = st.tabs(["📝 Summarizer", "💬 RAG Chatbot"])
+tab1, tab2, tab3 = st.tabs(["📝 Summarizer", "💬 RAG Chatbot", "👑 Admin Dashboard"])
 
 with tab1:
     render_summarizer_tab()
 
 with tab2:
     render_chatbot_tab()
+
+with tab3:
+    render_admin_tab()
+

@@ -18,6 +18,13 @@ Built with **CrewAI**, **LangChain**, **LangGraph**, **ChromaDB**, and **Google 
   - **Permanent Vector Memory**: ChromaDB persists vector indexes per `video_id`. Videos are embedded once and cached forever across sessions.
   - **Zero API Limit Local Embeddings**: Powered by `BAAI/bge-m3` via HuggingFace (runs locally on CPU/GPU).
 
+- **👑 Admin Dashboard & ChromaDB Inspector (Tab 3)**:
+  - **Password Protected**: Secured access (Default Passcode: `admin123`, configurable via `ADMIN_PASSWORD` in `.env` or Streamlit Secrets).
+  - **Vector DB Stats**: View total stored collections, total embedded chunks, and storage path metrics.
+  - **Collection & Chunk Inspector**: Inspect stored text chunks, chunk IDs, and JSON metadata per video.
+  - **Search & Filter**: Search text inside vector chunks.
+  - **Database Management**: Delete individual video vector indexes or purge the entire vector database.
+
 - **🛡️ Resilient Dual-Engine Transcript Extractor (Bypasses YouTube IP Bans)**:
   - **Primary**: `youtube-transcript-api` for fast caption retrieval.
   - **Secondary Fallback**: `yt-dlp` automatic subtitle extraction & WebVTT cleaner (bypasses YouTube anti-scraping HTTP 429 rate limits & IP bans).
@@ -54,7 +61,7 @@ YouTube-Videos-Summarizer_and_RAG_Chatbot/
 │   ├── text_utils.py               # Chunking, dynamic transcript truncation, RTL formatting
 │   └── guardrails.py               # Strict URL validation & input sanitization
 ├── rag/
-│   ├── vector_store.py             # ChromaDB persistent manager (with pysqlite3 Linux fallback)
+│   ├── vector_store.py             # ChromaDB persistent manager & inspection API (with pysqlite3 Linux fallback)
 │   ├── embedder.py                 # Local BGE-M3 embeddings & embedding pipeline
 │   └── retriever.py                # Similarity search context retriever
 ├── agents/
@@ -71,7 +78,8 @@ YouTube-Videos-Summarizer_and_RAG_Chatbot/
 └── ui/
     ├── sidebar.py                  # API Key configuration, Token Saver controls & user guide
     ├── summarizer_tab.py           # Tab 1 UI renderer (with manual transcript fallback)
-    └── chatbot_tab.py              # Tab 2 UI renderer
+    ├── chatbot_tab.py              # Tab 2 UI renderer
+    └── admin_tab.py                # Tab 3 Protected Admin Dashboard & ChromaDB inspector
 ```
 
 ---
@@ -87,13 +95,14 @@ pip install -r requirements.txt
 
 ### 2. Environment Setup (Optional)
 
-You can configure a default `GEMINI_API_KEY` in `.env`:
+You can configure default credentials in `.env`:
 
 ```env
 GEMINI_API_KEY=your_gemini_api_key_here
+ADMIN_PASSWORD=your_custom_admin_password
 ```
 
-*Note: Users can also input their key directly in the Streamlit web UI sidebar.*
+*Note: Default Admin Passcode is `admin123`.*
 
 ### 3. Run Application
 
@@ -113,7 +122,7 @@ To make your application publicly available to anyone via a web link:
    ```bash
    git init
    git add .
-   git commit -m "Deploy YouTube AI Suite"
+   git commit -m "Add Admin Dashboard & ChromaDB Inspector"
    git branch -M main
    git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPOSITORY_NAME.git
    git push -u origin main
@@ -123,9 +132,10 @@ To make your application publicly available to anyone via a web link:
 1. Go to [share.streamlit.io](https://share.streamlit.io/) and sign in with your GitHub account.
 2. Click **"New App"** (or **"Create App"**).
 3. Select your GitHub repository, branch (`main`), and set Main file path to `app.py` (or `YouTube-Videos-Summarizer_and_RAG_Chatbot/app.py` if nested).
-4. *(Optional)* Click **"Advanced Settings..."** -> **"Secrets"** and enter your fallback API key:
+4. *(Optional)* Click **"Advanced Settings..."** -> **"Secrets"** and enter your fallback API key & admin password:
    ```toml
    GEMINI_API_KEY = "your_gemini_api_key_here"
+   ADMIN_PASSWORD = "your_custom_admin_password"
    ```
 5. Click **"Deploy!"**.
 

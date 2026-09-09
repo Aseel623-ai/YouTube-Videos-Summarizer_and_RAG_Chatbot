@@ -66,6 +66,61 @@ class ChromaManager:
         except Exception:
             return []
 
+    def get_collection_data(self, video_id: str) -> dict:
+        """
+        Retrieve all documents, metadatas, and chunk IDs stored in a video's collection.
+        Used by Admin Dashboard for inspecting vector store contents.
+        """
+        name = _collection_name(video_id)
+        try:
+            col = self._client.get_collection(name)
+            data = col.get()
+            return {
+                "count": col.count(),
+                "ids": data.get("ids", []),
+                "documents": data.get("documents", []),
+                "metadatas": data.get("metadatas", []),
+            }
+        except Exception:
+            return {"count": 0, "ids": [], "documents": [], "metadatas": []}
+
+    def get_db_stats(self) -> dict:
+        """
+        Return overall ChromaDB statistics across all stored video collections.
+        """
+        total_collections = 0
+        total_chunks = 0
+        video_stats = []
+
+        try:
+            collections = self._client.list_collections()
+            total_collections = len(collections)
+            for c in collections:
+                count = c.count()
+                total_chunks += count
+                v_id = c.name[3:] if c.name.startswith("yt_") else c.name
+                video_stats.append({"video_id": v_id, "chunk_count": count})
+        except Exception:
+            pass
+
+        return {
+            "total_collections": total_collections,
+            "total_chunks": total_chunks,
+            "video_stats": video_stats,
+            "db_path": CHROMA_DB_PATH,
+        }
+
+    def purge_database(self) -> bool:
+        """Purge all stored collections in ChromaDB (Admin reset)."""
+        try:
+            collections = self._client.list_collections()
+            for c in collections:
+                self._client.delete_collection(c.name)
+            return True
+        except Exception:
+            return False
+
     @staticmethod
     def collection_name(video_id: str) -> str:
         return _collection_name(video_id)
+
