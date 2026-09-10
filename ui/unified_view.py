@@ -14,7 +14,6 @@ from rag.vector_store import ChromaManager
 
 
 def render_unified_view():
-    st.markdown("### 🎬 Video Analysis Workspace")
     st.caption("Enter a YouTube link to extract the transcript, index for instant Q&A, and generate an AI summary.")
 
     # Initialize Session State
@@ -94,7 +93,7 @@ def render_unified_view():
 
     # Trigger Processing
     if process_clicked:
-        if not url_input.strip():
+        if not url_input.strip() or not st.session_state.current_video_url.strip():
             st.warning("Please enter a valid YouTube video URL first.")
             return
 

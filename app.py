@@ -51,11 +51,13 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="main-header">🎬 YouTube AI Suite</div>', unsafe_allow_html=True)
+st.markdown("## 🎬 Video Analysis Workspace")
 st.markdown(
     '<div class="main-subtext">Multilingual Video Summarization & RAG Q&A — Powered by <b>LangGraph</b>, <b>Groq (openai/gpt-oss-120b)</b>, <b>Google Gemini</b>, and <b>ChromaDB</b>.</div>',
     unsafe_allow_html=True
 )
+
+st.divider(width='stretch')
 
 # Render Unified Workspace
 render_unified_view()
