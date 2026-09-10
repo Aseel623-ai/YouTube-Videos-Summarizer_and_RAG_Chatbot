@@ -28,23 +28,7 @@ def render_unified_view():
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
 
-    manager = ChromaManager()
-    processed_videos = manager.list_processed_videos_with_titles()
 
-    # Stored Videos Quick Selector (Showing Video Title)
-    if processed_videos:
-        with st.expander(f"📦 Stored Videos in Permanent Memory ({len(processed_videos)} videos ready for Q&A)"):
-            options_map = {f"https://www.youtube.com/watch?v={item['video_id']}": item["display_name"] for item in processed_videos}
-            selected_url = st.selectbox(
-                "Select a previously indexed video to load:",
-                options=[""] + list(options_map.keys()),
-                format_func=lambda x: "— Select a stored video —" if not x else options_map.get(x, x),
-                key="stored_video_selector"
-            )
-            if selected_url and selected_url != st.session_state.current_video_url:
-                st.session_state.current_video_url = selected_url
-                st.session_state.chat_history = []
-                st.rerun()
 
     # Input Form
     col_url, col_lang = st.columns([3, 1])
@@ -93,7 +77,7 @@ def render_unified_view():
 
     # Trigger Processing
     if process_clicked:
-        if not url_input.strip() or not st.session_state.current_video_url.strip():
+        if not url_input.strip():
             st.warning("Please enter a valid YouTube video URL first.")
             return
 
