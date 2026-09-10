@@ -7,6 +7,7 @@ One collection per video_id — survives app restarts (permanent memory).
 
 import chromadb
 from config.settings import CHROMA_DB_PATH
+from core.video_processor import get_video_metadata
 
 
 # Collection names must start with a letter per ChromaDB rules.
@@ -18,7 +19,7 @@ def _collection_name(video_id: str) -> str:
 class ChromaManager:
     """
     Thin wrapper around the ChromaDB persistent client.
-    Provides collection lifecycle management keyed by video_id.
+    Provides collection lifecycle management keyed strictly by video_id.
     """
 
     def __init__(self):
@@ -66,10 +67,30 @@ class ChromaManager:
         except Exception:
             return []
 
+    def list_processed_videos_with_titles(self) -> list[dict]:
+        """
+        Return a list of dictionaries with 'video_id', 'title', and 'chunk_count'
+        to display user-friendly titles in the Streamlit UI without altering
+        ChromaDB keys or storage.
+        """
+        processed = []
+        for vid in self.list_processed_videos():
+            try:
+                meta = get_video_metadata(vid)
+                title = meta.get("title", f"Video {vid}")
+            except Exception:
+                title = f"Video {vid}"
+            
+            processed.append({
+                "video_id": vid,
+                "title": title,
+                "display_name": f"🎬 {title} (ID: {vid})"
+            })
+        return processed
+
     def get_collection_data(self, video_id: str) -> dict:
         """
         Retrieve all documents, metadatas, and chunk IDs stored in a video's collection.
-        Used by Admin Dashboard for inspecting vector store contents.
         """
         name = _collection_name(video_id)
         try:
@@ -110,17 +131,6 @@ class ChromaManager:
             "db_path": CHROMA_DB_PATH,
         }
 
-    def purge_database(self) -> bool:
-        """Purge all stored collections in ChromaDB (Admin reset)."""
-        try:
-            collections = self._client.list_collections()
-            for c in collections:
-                self._client.delete_collection(c.name)
-            return True
-        except Exception:
-            return False
-
     @staticmethod
     def collection_name(video_id: str) -> str:
         return _collection_name(video_id)
-

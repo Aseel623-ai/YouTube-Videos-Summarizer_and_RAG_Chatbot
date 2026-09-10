@@ -1,7 +1,7 @@
 """
 ui/sidebar.py
 --------------
-Streamlit Sidebar rendering: API key configuration & user instructions.
+Streamlit Sidebar rendering: Groq & Gemini API key configuration, model selector & user instructions.
 """
 
 import streamlit as st
@@ -12,78 +12,117 @@ def render_sidebar():
     """Render the sidebar configuration and API key guide."""
     with st.sidebar:
         st.markdown("## ⚙️ Configuration / الإعدادات")
-        st.markdown("Provide your own Google Gemini API key to run the app.")
+        st.caption("Provide API keys for Groq (Summarizer) & Google Gemini (Q&A Chatbot).")
 
-        # API Key input
-        custom_key = st.text_input(
-            "🔑 Gemini API Key",
+        # 1. Groq API Key
+        custom_groq_key = st.text_input(
+            "⚡ Groq API Key (Summarizer)",
             type="password",
-            placeholder="AIzaSy...",
-            help="Enter your personal Google Gemini API key. It remains private to your browser session.",
-            key="custom_gemini_api_key"
+            placeholder="gsk_...",
+            help="Required for video summarization with Groq models.",
+            key="custom_groq_api_key"
         )
-
-        # Status Pill
-        active_key = custom_key.strip() or os.getenv("GEMINI_API_KEY", "") or os.getenv("GOOGLE_API_KEY", "")
-        if not active_key:
+        active_groq_key = custom_groq_key.strip() or os.getenv("GROQ_API_KEY", "")
+        if not active_groq_key:
             try:
-                if "GEMINI_API_KEY" in st.secrets:
-                    active_key = str(st.secrets["GEMINI_API_KEY"])
+                if hasattr(st, "secrets") and "GROQ_API_KEY" in st.secrets:
+                    active_groq_key = str(st.secrets["GROQ_API_KEY"])
             except Exception:
                 pass
 
-        if custom_key.strip():
-            st.success("🟢 Using Custom User API Key")
-        elif active_key:
-            st.info("🔵 Using Default System API Key")
+        if custom_groq_key.strip():
+            st.success("🟢 Groq: Using Custom Key")
+        elif active_groq_key:
+            st.info("🔵 Groq: Using System Key")
         else:
-            st.warning("⚠️ No API Key Detected. Please enter a key above.")
+            st.warning("⚠️ Groq Key Missing (Summarizer requires Groq)")
+
+        # Groq Model Selector
+        st.selectbox(
+            "⚡ Groq Summarizer Model:",
+            options=[
+                "openai/gpt-oss-120b",
+                "openai/gpt-oss-20b",
+                "qwen/qwen3.8-27b",
+                "allam-2-7b"
+            ],
+            index=0,
+            format_func=lambda x: {
+                "openai/gpt-oss-120b": "🧠 GPT-OSS 120B (Default)",
+                "openai/gpt-oss-20b": "⚡ GPT-OSS 20B (Fast)",
+                "qwen/qwen3.8-27b": "🌟 Qwen 3.8 27B (High Quality)",
+                "allam-2-7b": "🇸🇦 Allam 2 7B (Arabic Specialist)"
+            }.get(x, x),
+            key="groq_model_select",
+            help="Select the Groq model for video summarization."
+        )
+
+        st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+
+        # 2. Gemini API Key
+        custom_gemini_key = st.text_input(
+            "🔑 Gemini API Key (RAG Chatbot)",
+            type="password",
+            placeholder="AIzaSy...",
+            help="Required for context-grounded Q&A with Gemini 2.5 Flash.",
+            key="custom_gemini_api_key"
+        )
+        active_gemini_key = custom_gemini_key.strip() or os.getenv("GEMINI_API_KEY", "") or os.getenv("GOOGLE_API_KEY", "")
+        if not active_gemini_key:
+            try:
+                if hasattr(st, "secrets"):
+                    if "GEMINI_API_KEY" in st.secrets:
+                        active_gemini_key = str(st.secrets["GEMINI_API_KEY"])
+                    elif "GOOGLE_API_KEY" in st.secrets:
+                        active_gemini_key = str(st.secrets["GOOGLE_API_KEY"])
+            except Exception:
+                pass
+
+        if custom_gemini_key.strip():
+            st.success("🟢 Gemini: Using Custom Key")
+        elif active_gemini_key:
+            st.info("🔵 Gemini: Using System Key")
+        else:
+            st.warning("⚠️ Gemini Key Missing (Q&A requires Gemini)")
 
         st.divider()
 
         # Token Saver Control
-        st.markdown("### ⚡ Token Consumption / استهلاك التوكينز")
+        st.markdown("### ⚡ Context Processing Mode")
         st.radio(
-            "Select Processing Mode:",
+            "Transcript Context Length:",
             options=["saver", "balanced", "detailed"],
             index=1,
             format_func=lambda x: {
                 "saver": "⚡ Token Saver (~3.5k tokens)",
-                "balanced": "⚖️ Balanced (~6k tokens - Recommended)",
-                "detailed": "📜 Detailed (~11k tokens)"
+                "balanced": "⚖️ Balanced (~7k tokens - Recommended)",
+                "detailed": "📜 Detailed (~13k tokens)"
             }[x],
             key="token_mode_radio",
-            help="Controls max transcript context length per LLM request to save API quota."
+            help="Controls max transcript context length per LLM request."
         )
 
         st.divider()
 
-
-        # How to get API Key expander
-        with st.expander("❓ How to get a FREE Gemini API Key? / كيف تحصل على مفتاح API مجاني؟", expanded=False):
+        # How to get API Keys expander
+        with st.expander("❓ How to get FREE API Keys? / كيف تحصل على المفاتيح مجاناً؟", expanded=False):
             st.markdown("""
-            ### 🇸🇦 بالعربية:
-            1. توجه إلى [Google AI Studio](https://aistudio.google.com/app/apikey).
-            2. قم بتسجيل الدخول باستخدام حساب **Google** الخاص بك.
-            3. اضغط على زر **"Create API Key"** (إنشاء مفتاح API).
-            4. اختر المشروع أو أنشئ مشروعاً جديداً ثم انسخ المفتاح المتولد.
-            5. الصق المفتاح في خانة **Gemini API Key** بالأعلى.
-
+            ### ⚡ 1. Groq API Key (Free & Ultra-Fast):
+            - **[Groq Console](https://console.groq.com/keys)**
+            - Sign up / log in with Google or GitHub -> click **"Create API Key"** -> Copy and paste above.
+            
             ---
 
-            ### 🇬🇧 In English:
-            1. Go to [Google AI Studio](https://aistudio.google.com/app/apikey).
-            2. Sign in with your **Google Account**.
-            3. Click on the **"Create API Key"** button.
-            4. Select your Google Cloud project (or let it auto-create) and copy the generated key.
-            5. Paste your key into the **Gemini API Key** box above.
+            ### 🔑 2. Google Gemini API Key (Free):
+            - **[Google AI Studio](https://aistudio.google.com/app/apikey)**
+            - Sign in with Google Account -> click **"Create API Key"** -> Copy and paste above.
 
             ---
 
             🔒 **Privacy Note / ملاحظة خصوصية:**
-            - Your API key is stored only in your temporary browser session memory.
-            - It is **never** saved, logged, or shared anywhere.
+            - API keys remain in your browser session memory.
+            - Keys are **never** logged or saved to disk.
             """)
 
         st.divider()
-        st.caption("🚀 **YouTube AI Suite v1.0** | Powered by CrewAI, LangChain, LangGraph & Gemini")
+        st.caption("🚀 **YouTube AI Suite** | Groq + Gemini + LangGraph + ChromaDB")

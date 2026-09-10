@@ -1,7 +1,8 @@
 """
 rag/embedder.py
 ---------------
-Embed transcript chunks with the local BGE-M3 model and persist them in
+Embed transcript chunks with the lightweight multilingual model
+(sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2, ~470MB) and persist them in
 ChromaDB.  The embedding model is loaded once (singleton) and cached for
 the lifetime of the process — no repeated downloads after first run.
 
@@ -30,8 +31,8 @@ from rag.vector_store import ChromaManager
 @lru_cache(maxsize=1)
 def _get_embeddings() -> HuggingFaceEmbeddings:
     """
-    Load the BGE-M3 model once and cache it.
-    First call downloads ~570 MB to ~/.cache/huggingface/ (one-time only).
+    Load the lightweight multilingual embedding model once and cache it.
+    Downloads ~470 MB (one-time only) and provides 5x faster CPU inference.
     """
     return HuggingFaceEmbeddings(
         model_name=EMBEDDING_MODEL,

@@ -2,7 +2,7 @@
 core/text_utils.py
 ------------------
 Text processing utilities: chunking transcripts into LangChain Documents,
-RTL formatting for Arabic, and transcript truncation.
+RTL formatting for Arabic, transcript truncation, and LLM response sanitization.
 """
 
 try:
@@ -57,6 +57,43 @@ def truncate_transcript(text: str, max_chars: int | None = None) -> str:
         return text
     return text[:limit] + "\n\n[Transcript truncated for token efficiency — core content preserved.]"
 
+
+# ── LLM Response Sanitization ─────────────────────────────────────────────────
+
+def clean_llm_response(response) -> str:
+    """
+    Cleanly extract plain text from LangChain LLM responses across different
+    providers (Google Gemini, Groq, OpenAI).
+    Handles structured content blocks, signature metadata dictionaries, and strings.
+    """
+    if response is None:
+        return ""
+
+    if isinstance(response, str):
+        return response.strip()
+
+    # If it's a LangChain AIMessage / BaseMessage with .content
+    if hasattr(response, "content"):
+        content = response.content
+        if isinstance(content, str):
+            return content.strip()
+        elif isinstance(content, list):
+            # Extract only text parts and omit signature/extras metadata dictionaries
+            text_parts = []
+            for item in content:
+                if isinstance(item, str):
+                    text_parts.append(item)
+                elif isinstance(item, dict):
+                    if item.get("type") == "text" and "text" in item:
+                        text_parts.append(item["text"])
+                    elif "text" in item and not item.get("type") == "image":
+                        text_parts.append(item["text"])
+            return "\n\n".join(text_parts).strip()
+
+    if hasattr(response, "text") and isinstance(response.text, str):
+        return response.text.strip()
+
+    return str(response).strip()
 
 
 # ── RTL Formatting ────────────────────────────────────────────────────────────

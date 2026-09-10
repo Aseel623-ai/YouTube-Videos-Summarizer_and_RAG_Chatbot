@@ -2,21 +2,20 @@
 app.py
 ------
 Main Streamlit Entrypoint for YouTube Video Summarizer & RAG Chatbot.
+Unified single-page workspace powered by LangGraph, Groq (openai/gpt-oss-120b), Google Gemini, and ChromaDB.
 """
 
 import sys
-import os
 from pathlib import Path
 import streamlit as st
-from ui.sidebar import render_sidebar
-from ui.summarizer_tab import render_summarizer_tab
-from ui.chatbot_tab import render_chatbot_tab
-from ui.admin_tab import render_admin_tab
 
-# Ensure project root directory is always at the head of sys.path for Streamlit Cloud
+# Ensure project root directory is always at the head of sys.path
 ROOT_DIR = Path(__file__).resolve().parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
+
+from ui.sidebar import render_sidebar
+from ui.unified_view import render_unified_view
 
 
 st.set_page_config(
@@ -29,40 +28,34 @@ st.set_page_config(
 # Render sidebar configuration & guide
 render_sidebar()
 
-
 # Custom CSS styling
 st.markdown("""
 <style>
     .main-header {
-        font-size: 2.2rem;
+        font-size: 2.3rem;
         font-weight: 700;
-        background: linear-gradient(90deg, #FF0000, #FF4B4B);
+        background: linear-gradient(90deg, #FF0000, #FF4B4B, #FF8E53);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.2rem;
     }
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 24px;
+    .main-subtext {
+        font-size: 1rem;
+        color: #718096;
+        margin-bottom: 1.2rem;
     }
-    .stTabs [data-baseweb="tab"] {
-        height: 50px;
-        font-size: 16px;
+    .stButton>button {
+        border-radius: 8px;
         font-weight: 600;
     }
 </style>
 """, unsafe_allow_html=True)
 
 st.markdown('<div class="main-header">🎬 YouTube AI Suite</div>', unsafe_allow_html=True)
-st.caption("Multilingual Summarization & RAG Chatbot powered by CrewAI, LangChain, LangGraph, ChromaDB, and Gemini.")
+st.markdown(
+    '<div class="main-subtext">Multilingual Video Summarization & RAG Q&A — Powered by <b>LangGraph</b>, <b>Groq (openai/gpt-oss-120b)</b>, <b>Google Gemini</b>, and <b>ChromaDB</b>.</div>',
+    unsafe_allow_html=True
+)
 
-tab1, tab2, tab3 = st.tabs(["📝 Summarizer", "💬 RAG Chatbot", "👑 Admin Dashboard"])
-
-with tab1:
-    render_summarizer_tab()
-
-with tab2:
-    render_chatbot_tab()
-
-with tab3:
-    render_admin_tab()
-
+# Render Unified Workspace
+render_unified_view()
